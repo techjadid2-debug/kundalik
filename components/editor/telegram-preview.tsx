@@ -63,7 +63,7 @@ export function TelegramPreview({
         )}
       </div>
 
-      <div className="border border-line bg-surface">
+      <div className="overflow-hidden rounded-xl border border-line bg-surface">
         {coverUrl ? (
           <div className="relative aspect-[3/2] w-full border-b border-line">
             <Image
@@ -76,7 +76,7 @@ export function TelegramPreview({
             />
           </div>
         ) : (
-          <div className="flex aspect-[3/2] w-full items-center justify-center border-b border-line border-dashed text-xs text-muted">
+          <div className="flex aspect-[3/2] w-full items-center justify-center border-b border-dashed border-line text-xs text-muted">
             Muqova rasmi yo&apos;q
           </div>
         )}

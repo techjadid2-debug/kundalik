@@ -35,7 +35,7 @@ export default async function AdminHome() {
       </div>
 
       {all.length === 0 ? (
-        <p className="border border-dashed border-line px-6 py-16 text-center text-sm text-muted">
+        <p className="rounded-xl border border-dashed border-line px-6 py-16 text-center text-sm text-muted">
           Hali maqola yo&apos;q. Birinchisini yozing.
         </p>
       ) : (
@@ -44,7 +44,7 @@ export default async function AdminHome() {
             <li key={article.id}>
               <Link
                 href={`/admin/write/${article.id}`}
-                className="group flex items-baseline gap-4 py-4 transition-opacity hover:opacity-70"
+                className="group -mx-3 flex items-baseline gap-4 rounded-lg px-3 py-4 hover:bg-hover"
               >
                 <span className="w-28 shrink-0 text-xs text-muted">
                   {formatDate(article.publishedAt ?? article.updatedAt)}

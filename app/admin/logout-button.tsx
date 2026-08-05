@@ -10,7 +10,7 @@ export function LogoutButton() {
   return (
     <button
       type="button"
-      className="text-sm text-muted transition-colors hover:text-fg disabled:opacity-40"
+      className="-mx-2 rounded-md px-2 py-1 text-sm text-muted hover:bg-hover hover:text-fg disabled:opacity-40"
       disabled={pending}
       onClick={() => {
         startTransition(async () => {

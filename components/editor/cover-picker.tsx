@@ -40,14 +40,14 @@ export function CoverPicker({
       <span className="mb-1.5 block text-xs uppercase tracking-wider text-muted">Muqova</span>
 
       {value ? (
-        <div className="relative aspect-[3/2] w-full border border-line">
+        <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl border border-line">
           <Image src={value} alt="" fill sizes="320px" className="object-cover" unoptimized />
         </div>
       ) : (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex aspect-[3/2] w-full items-center justify-center border border-dashed border-line text-xs text-muted transition-colors hover:border-fg hover:text-fg"
+          className="flex aspect-[3/2] w-full items-center justify-center rounded-xl border border-dashed border-line text-xs text-muted hover:border-fg hover:bg-hover hover:text-fg"
         >
           {uploading ? 'Yuklanmoqda…' : 'Rasm tanlang'}
         </button>

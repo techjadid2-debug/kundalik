@@ -28,8 +28,8 @@ function ToolButton({
       onMouseDown={(e) => e.preventDefault()} // tanlov yo'qolmasin
       onClick={onClick}
       className={cx(
-        'h-8 min-w-8 px-2 text-sm transition-colors',
-        active ? 'bg-fg text-bg' : 'text-muted hover:text-fg',
+        'flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm',
+        active ? 'bg-fg text-bg' : 'text-muted hover:bg-hover hover:text-fg',
       )}
     >
       {children}
@@ -139,7 +139,7 @@ export function TiptapEditor({
       {/* Gapni tanlaganda chiqadigan tezkor panel — iqtibos belgilashning asosiy yo'li */}
       <BubbleMenu
         editor={editor}
-        className="flex items-center gap-0.5 border border-fg bg-bg px-0.5 shadow-sm"
+        className="flex items-center gap-0.5 rounded-lg border border-line bg-bg p-1 shadow-lg shadow-black/5"
       >
         <ToolButton
           title="Iqtibos sifatida belgilash (⌘⇧Q)"

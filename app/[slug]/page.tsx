@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { getPublishedArticleBySlug } from '@/lib/articles'
 import { formatDate, formatTags } from '@/lib/telegram/render'
 import { articleUrl } from '@/lib/site'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,9 +42,15 @@ export default async function ArticlePage({ params }: PageProps<'/[slug]'>) {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
-      <Link href="/" className="text-xs text-muted transition-colors hover:text-fg">
-        ← Kundalik
-      </Link>
+      <div className="flex items-center justify-between gap-6">
+        <Link
+          href="/"
+          className="-mx-2 rounded-md px-2 py-1 text-xs text-muted hover:bg-hover hover:text-fg"
+        >
+          ← Kundalik
+        </Link>
+        <ThemeToggle className="shrink-0" />
+      </div>
 
       <article className="mt-12">
         <header className="mb-10">
@@ -59,7 +66,7 @@ export default async function ArticlePage({ params }: PageProps<'/[slug]'>) {
         </header>
 
         {article.coverUrl ? (
-          <div className="relative mb-12 aspect-[3/2] w-full border border-line">
+          <div className="relative mb-12 aspect-[3/2] w-full overflow-hidden rounded-xl border border-line">
             <Image
               src={article.coverUrl}
               alt=""

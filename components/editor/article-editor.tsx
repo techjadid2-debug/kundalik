@@ -149,7 +149,7 @@ export function ArticleEditor({
         </Field>
         <button
           type="button"
-          className="-mt-4 text-xs text-muted underline underline-offset-4 hover:text-fg"
+          className="-mx-2 -mt-4 rounded-md px-2 py-1 text-xs text-muted underline underline-offset-4 hover:bg-hover hover:text-fg"
           onClick={() => setLead(suggestLead(doc))}
         >
           Birinchi paragrafdan olish
@@ -181,7 +181,7 @@ export function ArticleEditor({
             <span className="text-xs tabular-nums text-muted">{quoteTexts.length}</span>
           </div>
           {quoteTexts.length === 0 ? (
-            <p className="border border-dashed border-line px-3 py-4 text-xs leading-relaxed text-muted">
+            <p className="rounded-xl border border-dashed border-line px-3 py-4 text-xs leading-relaxed text-muted">
               Matndan gapni tanlab <b className="text-fg">Iqtibos</b> tugmasini bosing
               (yoki ⌘⇧Q). Belgilangan gaplar kuniga bittadan kanalga chiqadi.
             </p>
@@ -190,7 +190,7 @@ export function ArticleEditor({
               {quoteTexts.map((text, i) => (
                 <li
                   key={`${i}-${text.slice(0, 24)}`}
-                  className="border-l-2 border-line py-0.5 pl-2.5 text-xs leading-relaxed text-muted"
+                  className="rounded-r-md border-l-2 border-line bg-surface py-1.5 pl-2.5 pr-2 text-xs leading-relaxed text-muted"
                 >
                   {text}
                 </li>
@@ -233,7 +233,7 @@ export function ArticleEditor({
           <button
             type="button"
             disabled={deleting}
-            className="w-full pt-2 text-xs text-muted transition-colors hover:text-fg disabled:opacity-40"
+            className="mt-2 w-full rounded-md py-2 text-xs text-muted hover:bg-hover hover:text-fg disabled:opacity-40"
             onClick={() => {
               if (!confirm("Maqola va uning iqtiboslari butunlay o'chiriladi. Davom etamizmi?")) {
                 return

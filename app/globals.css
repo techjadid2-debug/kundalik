@@ -6,20 +6,55 @@
 */
 :root {
   --bg: #ffffff;
-  --fg: #000000;
-  --muted: #666666;
-  --line: #e5e5e5;
-  --surface: #fafafa;
+  --fg: #0a0a0a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --surface: #f7f7f7;
+  --hover: rgb(0 0 0 / 0.04);
+  color-scheme: light;
+
+  /* Yumaloqlik — barcha komponentlar shu uchtadan foydalanadi */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  /* Silliqlik — bitta egri chiziq, hamma joyda bir xil his */
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --dur: 180ms;
 }
 
+/* Tizim qorong'i, foydalanuvchi esa yorug'ni majburlamagan */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --fg: #ffffff;
-    --muted: #8a8a8a;
-    --line: #262626;
-    --surface: #0d0d0d;
+  :root:not([data-theme='light']) {
+    --bg: #0a0a0a;
+    --fg: #fafafa;
+    --muted: #8f8f8f;
+    --line: #242424;
+    --surface: #131313;
+    --hover: rgb(255 255 255 / 0.06);
+    color-scheme: dark;
   }
+}
+
+/* Foydalanuvchi qo'lda tanlagan — tizimdan ustun turadi */
+:root[data-theme='dark'] {
+  --bg: #0a0a0a;
+  --fg: #fafafa;
+  --muted: #8f8f8f;
+  --line: #242424;
+  --surface: #131313;
+  --hover: rgb(255 255 255 / 0.06);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --fg: #0a0a0a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --surface: #f7f7f7;
+  --hover: rgb(0 0 0 / 0.04);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -28,8 +63,13 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-surface: var(--surface);
+  --color-hover: var(--hover);
   --font-sans: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-reading), ui-serif, Georgia, serif;
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-lg);
 }
 
 * {
@@ -38,6 +78,49 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+}
+
+/* Mavzu almashganda rang keskin sakramasin */
+html,
+body {
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+/* Bosiladigan hamma narsa bir xil silliqlikda javob beradi */
+button,
+a,
+input,
+textarea,
+summary,
+[role='button'] {
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+button:not(:disabled):active,
+[role='button']:not([aria-disabled='true']):active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+
+  button:active,
+  [role='button']:active {
+    transform: none;
+  }
 }
 
 body {
@@ -56,6 +139,8 @@ body {
 :focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: 2px;
+  /* Halqa elementning o'z yumaloqligini takrorlaydi */
+  border-radius: inherit;
 }
 
 /* ── O'qish tipografikasi ───────────────────────────────────────────── */
@@ -101,7 +186,8 @@ body {
 
 .prose blockquote {
   border-left: 2px solid var(--fg);
-  padding-left: 1.25em;
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  padding: 0.25em 0 0.25em 1.25em;
   font-style: italic;
   color: var(--muted);
 }
@@ -137,8 +223,8 @@ body {
   font-size: 0.9em;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 0.1em 0.35em;
+  border-radius: var(--r-sm);
+  padding: 0.1em 0.4em;
 }
 
 /*
@@ -168,8 +254,11 @@ mark.iqtibos {
   pointer-events: none;
 }
 
-/* Editorda iqtibos yaxshiroq ko'rinsin — ozgina fon bilan */
+/* Editorda iqtibos yaxshiroq ko'rinsin — ozgina fon va yumshoq qirra bilan */
 .ProseMirror mark.iqtibos {
   background: color-mix(in srgb, var(--fg) 8%, transparent);
   box-shadow: inset 0 -2px 0 var(--fg);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  padding: 0.1em 0.15em 1px;
+  transition: background-color var(--dur) var(--ease);
 }

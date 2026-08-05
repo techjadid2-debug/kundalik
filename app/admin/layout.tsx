@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { LogoutButton } from './logout-button'
 
 export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
@@ -10,20 +11,21 @@ export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
             Kundalik
           </Link>
           <nav className="flex items-center gap-5 text-sm text-muted">
-            <Link href="/admin" className="transition-colors hover:text-fg">
+            <Link href="/admin" className="-mx-2 rounded-md px-2 py-1 hover:bg-hover hover:text-fg">
               Maqolalar
             </Link>
-            <Link href="/admin/quotes" className="transition-colors hover:text-fg">
+            <Link href="/admin/quotes" className="-mx-2 rounded-md px-2 py-1 hover:bg-hover hover:text-fg">
               Iqtiboslar
             </Link>
-            <Link href="/admin/settings" className="transition-colors hover:text-fg">
+            <Link href="/admin/settings" className="-mx-2 rounded-md px-2 py-1 hover:bg-hover hover:text-fg">
               Sozlamalar
             </Link>
-            <Link href="/" className="transition-colors hover:text-fg">
+            <Link href="/" className="-mx-2 rounded-md px-2 py-1 hover:bg-hover hover:text-fg">
               Sayt ↗
             </Link>
           </nav>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-4">
+            <ThemeToggle />
             <LogoutButton />
           </div>
         </div>

@@ -114,7 +114,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <p className="border-b border-dashed border-line px-4 py-10 text-center text-sm text-muted">
+    <p className="rounded-xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
       {children}
     </p>
   )

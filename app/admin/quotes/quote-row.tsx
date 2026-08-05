@@ -52,7 +52,7 @@ export function QuoteRow({
               type="button"
               disabled={pending || disabled}
               title={disabled ? 'Avval maqolani chop eting' : undefined}
-              className="text-muted transition-colors hover:text-fg disabled:opacity-30"
+              className="-mx-2 rounded-md px-2 py-1 text-muted hover:bg-hover hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent"
               onClick={() =>
                 startTransition(async () => {
                   setError(null)
@@ -66,7 +66,7 @@ export function QuoteRow({
             <button
               type="button"
               disabled={pending}
-              className="text-muted transition-colors hover:text-fg disabled:opacity-30"
+              className="-mx-2 rounded-md px-2 py-1 text-muted hover:bg-hover hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent"
               onClick={() => startTransition(() => setQuoteStatusAction(id, 'skipped').then(() => {}))}
             >
               O&apos;tkazib yubor
@@ -76,7 +76,7 @@ export function QuoteRow({
           <button
             type="button"
             disabled={pending}
-            className="text-muted transition-colors hover:text-fg disabled:opacity-30"
+            className="-mx-2 rounded-md px-2 py-1 text-muted hover:bg-hover hover:text-fg disabled:opacity-30 disabled:hover:bg-transparent"
             onClick={() => startTransition(() => setQuoteStatusAction(id, 'pending').then(() => {}))}
           >
             Navbatga qaytar
