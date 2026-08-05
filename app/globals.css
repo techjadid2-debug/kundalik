@@ -1,26 +1,175 @@
 @import "tailwindcss";
 
+/*
+  Kundalik dizayn tizimi — faqat oq, qora va uch kulrang.
+  Aksent rang yo'q: urg'u tipografika va bo'shliq bilan beriladi.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #ffffff;
+  --fg: #000000;
+  --muted: #666666;
+  --line: #e5e5e5;
+  --surface: #fafafa;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #000000;
+    --fg: #ffffff;
+    --muted: #8a8a8a;
+    --line: #262626;
+    --surface: #0d0d0d;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --font-sans: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-reading), ui-serif, Georgia, serif;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* ── O'qish tipografikasi ───────────────────────────────────────────── */
+
+.prose {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.75;
+  max-width: 68ch;
+}
+
+.prose > * + * {
+  margin-top: 1.5em;
+}
+
+.prose h2,
+.prose h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin-top: 2.5em;
+}
+
+.prose h2 {
+  font-size: 1.375rem;
+}
+
+.prose h3 {
+  font-size: 1.125rem;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--muted);
+}
+
+.prose a:hover {
+  text-decoration-color: var(--fg);
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--fg);
+  padding-left: 1.25em;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.5em;
+}
+
+.prose ul {
+  list-style: disc;
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li + li {
+  margin-top: 0.4em;
+}
+
+.prose li::marker {
+  color: var(--muted);
+}
+
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 3em 0;
+}
+
+.prose code {
+  font-size: 0.9em;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+}
+
+/*
+  Iqtibos belgisi — fon emas, pastdan nozik chiziq.
+  Aynan shu markdagi matnlar Telegramga alohida post bo'lib chiqadi.
+*/
+.prose mark.iqtibos,
+mark.iqtibos {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 -2px 0 var(--fg);
+  padding-bottom: 1px;
+}
+
+/* ── Editor ─────────────────────────────────────────────────────────── */
+
+.ProseMirror {
+  outline: none;
+  min-height: 60vh;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Editorda iqtibos yaxshiroq ko'rinsin — ozgina fon bilan */
+.ProseMirror mark.iqtibos {
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+  box-shadow: inset 0 -2px 0 var(--fg);
 }

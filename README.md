@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kundalik
 
-## Getting Started
+Maqola yozish va ularni shablon bo'yicha Telegram kanalga chop etish uchun sayt.
+Maqola ichida belgilangan gaplar alohida navbatga tushadi va kuniga bir marta
+kanalga mustaqil iqtibos posti bo'lib chiqadi.
 
-First, run the development server:
+## Ishga tushirish
 
 ```bash
+npm install
+npm run db:push      # sxemani Neon'ga yuklaydi
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local` fayli `vercel link` va integratsiyalar orqali to'ldirilgan.
+Qo'lda to'ldiriladigan qiymatlar `.env.example` da ko'rsatilgan.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Telegram
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. [@BotFather](https://t.me/BotFather) da `/newbot` — token oling.
+2. Botni kanalingizga **administrator** qilib qo'shing (*Post Messages* huquqi bilan).
+3. `.env.local` ga yozing:
+   ```
+   TELEGRAM_BOT_TOKEN=123456:AA...
+   TELEGRAM_CHANNEL_ID=@kanal_nomi
+   ```
+4. Tekshiring:
+   ```bash
+   npm run verify:telegram
+   ```
 
-## Learn More
+## Qanday ishlaydi
 
-To learn more about Next.js, take a look at the following resources:
+**Yozish** → `/admin/write/[id]`. Matn 1.2 soniyada avtomatik saqlanadi.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Iqtibos belgilash** → gapni tanlang, chiqqan panelda **Iqtibos** ni bosing
+(yoki `⌘⇧Q`). Belgilangan gaplar yon panelda ro'yxat bo'lib turadi.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Chop etish** → *Kanalga chop etish*. Muqova rasmi `sendPhoto` bilan yuboriladi,
+shablon `caption` ga tushadi. Telegram izohi **1024 belgi** bilan cheklangani uchun
+lid avtomatik, so'z chegarasida qisqartiriladi — editorda hisoblagich real vaqtda
+qancha qolganini ko'rsatib turadi. Qayta bosilsa yangi post emas, mavjud post
+yangilanadi (`editMessageMedia`).
 
-## Deploy on Vercel
+**Kunlik iqtibos** → `vercel.json` dagi cron har kuni `/api/cron/quote` ni chaqiradi
+va navbatdagi bitta iqtibosni jo'natadi. Navbat bo'sh bo'lsa 204 qaytaradi.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tekshiruvlar
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run verify:render     # shablon renderi, 1024 kesish, iqtibos ajratish
+npm run verify:db         # baza aylanmasi, server HTML renderi, cascade
+npm run verify:telegram   # bot tokeni va kanal huquqlari
+```
+
+Cron'ni lokalda sinash:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/quote
+```
+
+## Cron vaqti
+
+`vercel.json` dagi jadval **UTC** bo'yicha. Toshkent = UTC+5:
+
+| Toshkent | cron |
+|---|---|
+| 09:00 | `0 4 * * *` |
+| 12:00 | `0 7 * * *` |
+| 20:00 | `0 15 * * *` |
+
+Vercel Hobby tarifida cron kuniga **1 marta** va belgilangan soat ichida ishlaydi
+(aniq daqiqada emas). Kuniga bir nechta iqtibos kerak bo'lsa — Vercel Pro yoki
+tashqi cron xizmati.
+
+## Tuzilma
+
+```
+app/
+  page.tsx              ochiq: maqolalar ro'yxati
+  [slug]/page.tsx       ochiq: maqola
+  admin/                yopiq: yozish, iqtiboslar, sozlamalar
+  api/cron/quote/       kunlik iqtibos
+lib/
+  telegram/render.ts    shablon + 1024 belgi hisobi
+  quotes.ts             Tiptap JSON'dan iqtiboslarni ajratish
+  editor/iqtibos.ts     custom Tiptap mark
+  editor/extensions.ts  client va server AYNAN shu ro'yxatni ishlatadi
+proxy.ts                /admin himoyasi (Next 16 da middleware.ts o'rniga)
+```
