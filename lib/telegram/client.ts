@@ -98,6 +98,13 @@ export function editPhotoPost(opts: {
   })
 }
 
+export function deleteMessage(messageId: number): Promise<boolean> {
+  return call<boolean>('deleteMessage', {
+    chat_id: channelId(),
+    message_id: messageId,
+  })
+}
+
 export function getMe(): Promise<{ id: number; username: string; first_name: string }> {
   return call('getMe', {})
 }

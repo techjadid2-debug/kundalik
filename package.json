@@ -11,7 +11,8 @@
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "verify:render": "tsx scripts/verify-render.ts",
     "verify:telegram": "dotenv -e .env.local -- tsx scripts/verify-telegram.ts",
-    "verify:db": "dotenv -e .env.local -- tsx scripts/verify-db.ts"
+    "verify:db": "dotenv -e .env.local -- tsx scripts/verify-db.ts",
+    "verify:e2e": "dotenv -e .env.local -- tsx scripts/verify-e2e.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
