@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import Image from 'next/image'
 import { CAPTION_LIMIT, renderArticleCaption } from '@/lib/telegram/render'
+import { buildArticleKeyboard } from '@/lib/telegram/render'
 import { sanitizeTelegramHtml } from '@/lib/telegram/preview'
 import { cx } from '@/components/ui'
 
@@ -15,6 +16,7 @@ export function TelegramPreview({
   url,
   channel,
   timezone,
+  summary,
 }: {
   template: string
   title: string
@@ -24,12 +26,14 @@ export function TelegramPreview({
   url: string
   channel: string
   timezone: string
+  summary: string
 }) {
   const result = useMemo(() => {
     try {
       const rendered = renderArticleCaption(template, {
         title: title || 'Sarlavha',
         lead,
+        summary,
         tags,
         url,
         date: new Date(),
@@ -45,7 +49,8 @@ export function TelegramPreview({
         error: error instanceof Error ? error.message : String(error),
       }
     }
-  }, [template, title, lead, tags, url, channel, timezone])
+  }, [template, title, lead, summary, tags, url, channel, timezone])
+  const keyboard = useMemo(() => buildArticleKeyboard({ url, channel }), [url, channel])
 
   return (
     <div>
@@ -95,6 +100,14 @@ export function TelegramPreview({
         <p className="mt-1.5 text-xs text-muted">
           Lid 1024 belgiga sig&apos;magani uchun qisqartiriladi.
         </p>
+      ) : null}
+
+      {!result.error ? (
+        <div className="mt-2 grid gap-1 rounded-xl border border-line bg-surface p-1 text-center text-xs">
+          {keyboard.inline_keyboard[0].map((button) => (
+            <span key={button.url} className="rounded-lg bg-bg px-3 py-2 text-fg">{button.text}</span>
+          ))}
+        </div>
       ) : null}
     </div>
   )

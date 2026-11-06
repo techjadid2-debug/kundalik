@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { Button, Input, Notice } from '@/components/ui'
+import { Input, Notice } from '@/components/ui'
+import { ActionButton } from '@/components/action-button'
 
 export function LoginForm({ next }: { next: string }) {
   const router = useRouter()
@@ -50,9 +51,9 @@ export function LoginForm({ next }: { next: string }) {
         autoFocus
         required
       />
-      <Button type="submit" variant="solid" className="w-full" disabled={pending || !password}>
-        {pending ? 'Tekshirilmoqda…' : 'Kirish'}
-      </Button>
+      <ActionButton type="submit" variant="solid" className="w-full" pending={pending} pendingLabel="Tekshirilmoqda…" disabled={!password}>
+        Kirish
+      </ActionButton>
       {error ? <Notice tone="error">{error}</Notice> : null}
     </form>
   )

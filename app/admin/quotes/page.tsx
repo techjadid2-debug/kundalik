@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export default async function QuotesPage() {
   const [all, settings] = await Promise.all([listQuotes(), getSettings()])
 
-  const pending = all.filter((r) => r.quote.status === 'pending')
+  const pending = all.filter((r) => r.quote.status === 'pending' || r.quote.status === 'processing')
   const sent = all.filter((r) => r.quote.status === 'sent')
   const skipped = all.filter((r) => r.quote.status === 'skipped')
 
@@ -58,7 +58,7 @@ export default async function QuotesPage() {
               articleTitle={row.article.title}
               articleId={row.article.id}
               disabled
-              note="Qoralama"
+              note={row.quote.status === 'processing' ? 'Jo‘natilmoqda' : 'Qoralama'}
             />
           ))}
         </Section>

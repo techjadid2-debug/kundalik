@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
 import type { JSONContent } from '@tiptap/core'
@@ -13,16 +13,25 @@ import {
   getArticle,
   saveDraft,
   syncQuotes,
-  type ArticleDraft,
+  type ArticlePatch,
 } from './articles'
-import { extractQuotes } from './quotes'
+import { buildTelegramSummary, extractQuotes } from './quotes'
 import { getSettings, updateSettings } from './settings'
-import { renderArticleCaption, renderQuoteMessage } from './telegram/render'
+import { buildArticleKeyboard, renderArticleCaption, renderQuoteMessage } from './telegram/render'
 import { editPhotoPost, sendMessage, sendPhoto } from './telegram/client'
 import { explainTelegramError } from './telegram/errors'
 import { articleUrl } from './site'
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string }
+
+function refreshPublicContent(slug?: string) {
+  revalidateTag('articles', 'max')
+  if (slug) {
+    revalidateTag(`article:${slug}`, 'max')
+    revalidatePath(`/${slug}`)
+  }
+  revalidatePath('/')
+}
 
 // ── Maqola ────────────────────────────────────────────────────────────
 
@@ -33,26 +42,49 @@ export async function newArticleAction(): Promise<void> {
   redirect(`/admin/write/${draft.id}`)
 }
 
-export async function saveArticleAction(id: string, draft: ArticleDraft): Promise<ActionResult> {
+export async function saveArticleAction(id: string, patch: ArticlePatch): Promise<ActionResult> {
   await requireAuth()
   try {
-    const saved = await saveDraft(id, draft)
-    // Qoralamada ham navbatni yangilab boramiz, publish'ni kutmasdan
-    await syncQuotes(id, extractQuotes(draft.contentJson))
-    revalidatePath('/admin')
-    revalidatePath('/admin/quotes')
-    if (saved.status === 'published') revalidatePath(`/${saved.slug}`)
+    if (patch.contentType && !['article', 'short', 'media'].includes(patch.contentType)) {
+      return { ok: false, error: 'Kontent turi noto\'g\'ri' }
+    }
+    if (patch.contentType === 'media' && patch.mediaUrl && !['YouTube', 'Vimeo'].includes(patch.mediaProvider ?? '')) {
+      return { ok: false, error: 'Media provider qo\'llab-quvvatlanmaydi' }
+    }
+    const saved = await saveDraft(id, patch)
+    if (patch.contentJson) {
+      await syncQuotes(id, extractQuotes(patch.contentJson))
+      revalidatePath('/admin/quotes')
+    }
+    if (saved.status === 'published') refreshPublicContent(saved.slug)
     return { ok: true }
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
 }
 
+export async function scheduleArticleAction(id: string, scheduledAt: Date): Promise<ActionResult> {
+  await requireAuth()
+  if (Number.isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) {
+    return { ok: false, error: 'Kelajakdagi vaqtni tanlang' }
+  }
+  const article = await getArticle(id)
+  if (!article) return { ok: false, error: 'Maqola topilmadi' }
+  await getDb()
+    .update(articles)
+    .set({ status: 'published', publishedAt: scheduledAt, scheduledAt, updatedAt: new Date() })
+    .where(eq(articles.id, id))
+  refreshPublicContent(article.slug)
+  revalidatePath('/admin')
+  return { ok: true, message: 'Maqola rejalashtirildi' }
+}
+
 export async function deleteArticleAction(id: string): Promise<void> {
   await requireAuth()
+  const article = await getArticle(id)
   await removeArticle(id)
   revalidatePath('/admin')
-  revalidatePath('/')
+  refreshPublicContent(article?.slug)
   redirect('/admin')
 }
 
@@ -66,8 +98,9 @@ export async function publishArticleAction(id: string): Promise<ActionResult> {
   const article = await getArticle(id)
   if (!article) return { ok: false, error: 'Maqola topilmadi' }
   if (!article.title.trim()) return { ok: false, error: 'Sarlavha kiritilmagan' }
-  if (!article.lead.trim()) return { ok: false, error: 'Lid matni kiritilmagan' }
-  if (!article.coverUrl) return { ok: false, error: 'Muqova rasmi yuklanmagan' }
+  if (article.contentType !== 'short' && !article.lead.trim()) return { ok: false, error: 'Lid matni kiritilmagan' }
+  if (article.contentType !== 'media' && !article.coverUrl) return { ok: false, error: 'Muqova rasmi yuklanmagan' }
+  if (article.contentType === 'media' && !article.mediaUrl) return { ok: false, error: 'Media havolasi kiritilmagan' }
 
   const config = await getSettings()
 
@@ -76,6 +109,7 @@ export async function publishArticleAction(id: string): Promise<ActionResult> {
     caption = renderArticleCaption(config.articleTemplate, {
       title: article.title,
       lead: article.lead,
+      summary: buildTelegramSummary(article.contentJson as JSONContent, article.lead),
       tags: article.tags,
       url: articleUrl(article.slug),
       date: article.publishedAt ?? new Date(),
@@ -88,20 +122,33 @@ export async function publishArticleAction(id: string): Promise<ActionResult> {
 
   const publishedMessageId = article.tgMessageId
   const isUpdate = publishedMessageId != null
+  const replyMarkup = buildArticleKeyboard({
+    url: articleUrl(article.slug),
+    channel: config.channelUsername,
+  })
 
   try {
-    if (isUpdate) {
+    if (isUpdate && article.coverUrl) {
       await editPhotoPost({
         messageId: publishedMessageId,
         photoUrl: article.coverUrl,
         caption: caption.text,
+        replyMarkup,
       })
-    } else {
-      const sent = await sendPhoto({ photoUrl: article.coverUrl, caption: caption.text })
+    } else if (!isUpdate && article.coverUrl) {
+      const sent = await sendPhoto({ photoUrl: article.coverUrl, caption: caption.text, replyMarkup })
       await getDb()
         .update(articles)
         .set({ tgMessageId: sent.message_id })
         .where(eq(articles.id, id))
+    } else if (!isUpdate && article.mediaUrl) {
+      const sent = await sendMessage({ text: `${caption.text}\n\n${article.mediaUrl}`, replyMarkup })
+      await getDb()
+        .update(articles)
+        .set({ tgMessageId: sent.message_id })
+        .where(eq(articles.id, id))
+    } else {
+      return { ok: false, error: 'Media postini yangilash uchun hozircha cover rasmi kerak' }
     }
   } catch (error) {
     return { ok: false, error: explainTelegramError(error) }
@@ -118,10 +165,9 @@ export async function publishArticleAction(id: string): Promise<ActionResult> {
 
   await syncQuotes(id, extractQuotes(article.contentJson as JSONContent))
 
-  revalidatePath('/')
+  refreshPublicContent(article.slug)
   revalidatePath('/admin')
   revalidatePath('/admin/quotes')
-  revalidatePath(`/${article.slug}`)
 
   return {
     ok: true,

@@ -6,8 +6,7 @@ import { getPublishedArticleBySlug } from '@/lib/articles'
 import { formatDate, formatTags } from '@/lib/telegram/render'
 import { articleUrl } from '@/lib/site'
 import { ThemeToggle } from '@/components/theme-toggle'
-
-export const dynamic = 'force-dynamic'
+import { mediaEmbedUrl } from '@/lib/media'
 
 export async function generateMetadata({ params }: PageProps<'/[slug]'>): Promise<Metadata> {
   const { slug } = await params
@@ -53,6 +52,20 @@ export default async function ArticlePage({ params }: PageProps<'/[slug]'>) {
       </div>
 
       <article className="mt-12">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Article',
+              headline: article.title,
+              description: article.lead,
+              datePublished: article.publishedAt?.toISOString(),
+              image: article.coverUrl ?? undefined,
+              url: articleUrl(article.slug),
+            }).replace(/</g, '\\u003c'),
+          }}
+        />
         <header className="mb-10">
           <time
             dateTime={article.publishedAt?.toISOString()}
@@ -75,6 +88,24 @@ export default async function ArticlePage({ params }: PageProps<'/[slug]'>) {
               priority
               className="object-cover"
             />
+          </div>
+        ) : null}
+
+        {article.contentType === 'media' && article.mediaUrl ? (
+          <div className="mb-12 aspect-video overflow-hidden rounded-xl border border-line bg-surface">
+            {mediaEmbedUrl(article.mediaUrl, article.mediaProvider) ? (
+              <iframe
+                src={mediaEmbedUrl(article.mediaUrl, article.mediaProvider) ?? undefined}
+                title={article.title}
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <a className="flex h-full items-center justify-center text-sm underline" href={article.mediaUrl} rel="noreferrer" target="_blank">
+                Media havolasini ochish ↗
+              </a>
+            )}
           </div>
         ) : null}
 

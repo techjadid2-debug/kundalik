@@ -19,8 +19,8 @@
   --r-lg: 14px;
 
   /* Silliqlik — bitta egri chiziq, hamma joyda bir xil his */
-  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
-  --dur: 180ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 200ms;
 }
 
 /* Tizim qorong'i, foydalanuvchi esa yorug'ni majburlamagan */
@@ -64,8 +64,8 @@
   --color-line: var(--line);
   --color-surface: var(--surface);
   --color-hover: var(--hover);
-  --font-sans: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-reading), ui-serif, Georgia, serif;
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
   --radius-sm: var(--r-sm);
   --radius-md: var(--r-md);
   --radius-lg: var(--r-lg);
@@ -104,9 +104,32 @@ summary,
     box-shadow var(--dur) var(--ease);
 }
 
-button:not(:disabled):active,
-[role='button']:not([aria-disabled='true']):active {
-  transform: scale(0.97);
+.button-motion {
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
+}
+
+.button-motion:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.08);
+}
+
+.button-motion:not(:disabled):active {
+  transform: translateY(0) scale(0.985);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.06);
+}
+
+.button-spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: button-spin 620ms linear infinite;
+}
+
+@keyframes button-spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -117,10 +140,12 @@ button:not(:disabled):active,
     animation-duration: 0.01ms !important;
   }
 
-  button:active,
-  [role='button']:active {
+  .button-motion:active,
+  .button-motion:hover {
     transform: none;
   }
+
+  .button-spinner { animation: none; }
 }
 
 body {

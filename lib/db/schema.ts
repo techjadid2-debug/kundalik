@@ -13,12 +13,23 @@ import type { JSONContent } from '@tiptap/core'
 
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [] }
 
+export const series = pgTable('series', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  title: text('title').notNull(),
+  description: text('description').notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const articles = pgTable(
   'articles',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     slug: text('slug').notNull().unique(),
     title: text('title').notNull().default(''),
+    contentType: text('content_type', { enum: ['article', 'short', 'media'] })
+      .notNull()
+      .default('article'),
     /** Telegram preview matni — 1-paragrafdan avto to'ldiriladi, qo'lda tahrirlanadi */
     lead: text('lead').notNull().default(''),
     /** Manba haqiqat — Tiptap hujjati */
@@ -26,6 +37,12 @@ export const articles = pgTable(
     /** Server'da render qilingan HTML — ochiq saytda ko'rsatish uchun */
     contentHtml: text('content_html').notNull().default(''),
     coverUrl: text('cover_url'),
+    mediaUrl: text('media_url'),
+    mediaProvider: text('media_provider'),
+    seriesId: uuid('series_id').references(() => series.id, { onDelete: 'set null' }),
+    seriesOrder: integer('series_order'),
+    isFeatured: integer('is_featured').notNull().default(0),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
     tags: text('tags').array().notNull().default(sql`ARRAY[]::text[]`),
     status: text('status', { enum: ['draft', 'published'] })
       .notNull()
@@ -49,10 +66,11 @@ export const quotes = pgTable(
     text: text('text').notNull(),
     /** Maqola ichidagi tartib */
     position: integer('position').notNull().default(0),
-    status: text('status', { enum: ['pending', 'sent', 'skipped'] })
+    status: text('status', { enum: ['pending', 'processing', 'sent', 'skipped'] })
       .notNull()
       .default('pending'),
     sentAt: timestamp('sent_at', { withTimezone: true }),
+    processingAt: timestamp('processing_at', { withTimezone: true }),
     tgMessageId: bigint('tg_message_id', { mode: 'number' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -73,5 +91,6 @@ export const settings = pgTable('settings', {
 
 export type Article = typeof articles.$inferSelect
 export type NewArticle = typeof articles.$inferInsert
+export type Series = typeof series.$inferSelect
 export type Quote = typeof quotes.$inferSelect
 export type Settings = typeof settings.$inferSelect

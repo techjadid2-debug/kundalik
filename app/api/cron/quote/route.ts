@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/lib/db'
 import { quotes } from '@/lib/db/schema'
-import { nextPendingQuote } from '@/lib/quote-queue'
+import { claimNextPendingQuote, releaseQuote } from '@/lib/quote-queue'
 import { getSettings } from '@/lib/settings'
 import { renderQuoteMessage } from '@/lib/telegram/render'
 import { sendMessage } from '@/lib/telegram/client'
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Ruxsat yo\'q' }, { status: 401 })
   }
 
-  const next = await nextPendingQuote()
+  const next = await claimNextPendingQuote()
   if (!next) {
     // Navbat bo'sh — bu xato emas
     return new Response(null, { status: 204 })
@@ -44,6 +44,7 @@ export async function GET(request: Request) {
       timeZone: settings.timezone,
     })
   } catch (error) {
+    await releaseQuote(next.quote.id)
     return Response.json(
       { error: error instanceof Error ? error.message : String(error) },
       { status: 500 },
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
       text: next.quote.text,
     })
   } catch (error) {
+    await releaseQuote(next.quote.id)
     return Response.json({ error: explainTelegramError(error) }, { status: 502 })
   }
 }

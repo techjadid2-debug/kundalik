@@ -89,3 +89,24 @@ export function suggestLead(doc: JSONContent | null | undefined, maxLength = 320
   if (first.length <= maxLength) return first
   return first.slice(0, maxLength).replace(/\s+\S*$/, '') + '…'
 }
+
+/** Telegram uchun maqolaning boshlanishidan o'qilishi yengil mazmun tayyorlaydi. */
+export function buildTelegramSummary(doc: JSONContent | null | undefined, lead: string): string {
+  const blocks = docToPlainText(doc)
+    .split('\n\n')
+    .map(normalize)
+    .filter(Boolean)
+  const intro = normalize(lead) || blocks[0] || ''
+  const seen = new Set([intro.toLocaleLowerCase()])
+  const points = blocks
+    .filter((block) => {
+      const key = block.toLocaleLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .slice(0, 3)
+    .map((block) => `• ${block}`)
+
+  return [intro, ...points].filter(Boolean).join('\n')
+}

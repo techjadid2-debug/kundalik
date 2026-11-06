@@ -6,7 +6,7 @@ export function cx(...parts: Array<string | false | null | undefined>): string {
 
 const BUTTON_BASE =
   'inline-flex items-center justify-center gap-2 rounded-md border px-4 h-9 text-sm ' +
-  'select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100'
+  'button-motion select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100'
 
 type ButtonProps = ComponentProps<'button'> & {
   variant?: 'solid' | 'outline' | 'ghost'

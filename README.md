@@ -45,6 +45,10 @@ yangilanadi (`editMessageMedia`).
 **Kunlik iqtibos** → `vercel.json` dagi cron har kuni `/api/cron/quote` ni chaqiradi
 va navbatdagi bitta iqtibosni jo'natadi. Navbat bo'sh bo'lsa 204 qaytaradi.
 
+Maqola muharririda `Maqola`, `Qisqa post` yoki `Media` turini tanlash mumkin.
+Media uchun hozircha YouTube va Vimeo havolalari embed qilinadi. Ochiq sayt qidiruv,
+RSS (`/rss.xml`), sitemap va robots endpointlariga ega.
+
 ## Tekshiruvlar
 
 ```bash

@@ -10,9 +10,12 @@ import { NewArticleButton } from './new-article-button'
 export const metadata = { title: 'Maqolalar' }
 export const dynamic = 'force-dynamic'
 
-export default async function AdminHome() {
+export default async function AdminHome({ searchParams }: PageProps<'/admin'>) {
+  const params = await searchParams
+  const query = typeof params.q === 'string' ? params.q : ''
+  const status = params.status === 'draft' || params.status === 'published' ? params.status : undefined
   const [all, pending] = await Promise.all([
-    listArticles(),
+    listArticles(status, query, true),
     getDb().select({ id: quotes.id }).from(quotes).where(eq(quotes.status, 'pending')),
   ])
 
@@ -33,6 +36,16 @@ export default async function AdminHome() {
         </div>
         <NewArticleButton />
       </div>
+
+      <form className="mb-6 flex flex-wrap gap-2" role="search">
+        <input name="q" defaultValue={query} placeholder="Maqola qidirish…" className="h-9 min-w-56 flex-1 rounded-md border border-line bg-bg px-3 text-sm" />
+        <select name="status" defaultValue={status ?? ''} className="h-9 rounded-md border border-line bg-bg px-3 text-sm">
+          <option value="">Barcha holatlar</option>
+          <option value="draft">Qoralama</option>
+          <option value="published">Chop etilgan</option>
+        </select>
+        <button className="rounded-md border border-fg bg-fg px-4 text-sm text-bg" type="submit">Izlash</button>
+      </form>
 
       {all.length === 0 ? (
         <p className="rounded-xl border border-dashed border-line px-6 py-16 text-center text-sm text-muted">
@@ -57,7 +70,7 @@ export default async function AdminHome() {
                     <span className="mt-0.5 block truncate text-sm text-muted">{article.lead}</span>
                   ) : null}
                 </span>
-                {article.status === 'draft' ? <Badge>Qoralama</Badge> : null}
+                {article.status === 'draft' ? <Badge>Qoralama</Badge> : article.publishedAt && article.publishedAt > new Date() ? <Badge>Rejalashtirilgan</Badge> : null}
               </Link>
             </li>
           ))}

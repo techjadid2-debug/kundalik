@@ -2,14 +2,16 @@ import 'server-only'
 import { eq } from 'drizzle-orm'
 import { getDb } from './db'
 import { settings, type Settings } from './db/schema'
-import { DEFAULT_ARTICLE_TEMPLATE, DEFAULT_QUOTE_TEMPLATE } from './telegram/render'
+import { DEFAULT_ARTICLE_TEMPLATE, DEFAULT_QUOTE_TEMPLATE, isLegacyArticleTemplate } from './telegram/render'
 
 const SINGLETON_ID = 1
 
 function withDefaults(row: Settings): Settings {
   return {
     ...row,
-    articleTemplate: row.articleTemplate || DEFAULT_ARTICLE_TEMPLATE,
+    articleTemplate: !row.articleTemplate || isLegacyArticleTemplate(row.articleTemplate)
+      ? DEFAULT_ARTICLE_TEMPLATE
+      : row.articleTemplate,
     quoteTemplate: row.quoteTemplate || DEFAULT_QUOTE_TEMPLATE,
     channelUsername: row.channelUsername || (process.env.TELEGRAM_CHANNEL_ID ?? ''),
   }

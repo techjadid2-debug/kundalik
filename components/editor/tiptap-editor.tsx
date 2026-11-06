@@ -4,7 +4,7 @@ import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import { Placeholder } from '@tiptap/extensions'
 import type { JSONContent } from '@tiptap/core'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { editorExtensions } from '@/lib/editor/extensions'
 import { cx } from '@/components/ui'
 
@@ -112,6 +112,7 @@ export function TiptapEditor({
   initialContent: JSONContent
   onChange: (doc: JSONContent) => void
 }) {
+  const changeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const editor = useEditor({
     // SSR hidratsiya nomuvofiqligining oldini oladi
     immediatelyRender: false,
@@ -123,10 +124,17 @@ export function TiptapEditor({
     editorProps: {
       attributes: { class: 'prose focus:outline-none' },
     },
-    onUpdate: ({ editor: e }) => onChange(e.getJSON()),
+    onUpdate: ({ editor: e }) => {
+      if (changeTimer.current) clearTimeout(changeTimer.current)
+      const doc = e.getJSON()
+      changeTimer.current = setTimeout(() => onChange(doc), 350)
+    },
   })
 
-  useEffect(() => () => editor?.destroy(), [editor])
+  useEffect(() => () => {
+    if (changeTimer.current) clearTimeout(changeTimer.current)
+    editor?.destroy()
+  }, [editor])
 
   if (!editor) {
     return <div className="prose min-h-[60vh] text-muted">Editor yuklanmoqda…</div>

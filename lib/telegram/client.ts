@@ -1,5 +1,7 @@
 const API_ROOT = 'https://api.telegram.org'
 
+export type InlineKeyboard = { inline_keyboard: Array<Array<{ text: string; url: string }>> }
+
 export class TelegramError extends Error {
   constructor(
     readonly method: string,
@@ -54,23 +56,26 @@ async function call<T>(method: string, payload: Record<string, unknown>, attempt
 
 export type SentMessage = { message_id: number }
 
-export function sendPhoto(opts: { photoUrl: string; caption: string }): Promise<SentMessage> {
+export function sendPhoto(opts: { photoUrl: string; caption: string; replyMarkup?: InlineKeyboard }): Promise<SentMessage> {
   return call<SentMessage>('sendPhoto', {
     chat_id: channelId(),
     photo: opts.photoUrl,
     caption: opts.caption,
     parse_mode: 'HTML',
+    reply_markup: opts.replyMarkup,
   })
 }
 
 export function sendMessage(opts: {
   text: string
   showLinkPreview?: boolean
+  replyMarkup?: InlineKeyboard
 }): Promise<SentMessage> {
   return call<SentMessage>('sendMessage', {
     chat_id: channelId(),
     text: opts.text,
     parse_mode: 'HTML',
+    reply_markup: opts.replyMarkup,
     link_preview_options: opts.showLinkPreview
       ? { is_disabled: false, prefer_large_media: true }
       : { is_disabled: true },
@@ -85,6 +90,7 @@ export function editPhotoPost(opts: {
   messageId: number
   photoUrl: string
   caption: string
+  replyMarkup?: InlineKeyboard
 }): Promise<SentMessage | true> {
   return call<SentMessage | true>('editMessageMedia', {
     chat_id: channelId(),
@@ -95,6 +101,7 @@ export function editPhotoPost(opts: {
       caption: opts.caption,
       parse_mode: 'HTML',
     },
+    reply_markup: opts.replyMarkup,
   })
 }
 

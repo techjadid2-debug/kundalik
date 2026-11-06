@@ -1,11 +1,12 @@
 import 'server-only'
 import { generateHTML } from '@tiptap/html/server'
 import type { JSONContent } from '@tiptap/core'
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, ilike, lte, or, sql } from 'drizzle-orm'
+import { unstable_cache } from 'next/cache'
 import { getDb } from './db'
 import { articles, quotes, type Article } from './db/schema'
 import { editorExtensions } from './editor/extensions'
-import { slugFromTitle, uniqueSlug } from './slug'
+import { slugFromTitle } from './slug'
 
 export const EMPTY_DOC: JSONContent = {
   type: 'doc',
@@ -21,14 +22,34 @@ export function renderContentHtml(doc: JSONContent): string {
   }
 }
 
-export async function listArticles(status?: Article['status']) {
+export async function listArticles(status?: Article['status'], query?: string, includeScheduled = false) {
   const db = getDb()
-  const where = status ? eq(articles.status, status) : undefined
+  const search = query?.trim()
+  const where = and(
+    status ? eq(articles.status, status) : undefined,
+    status === 'published' && !includeScheduled ? lte(articles.publishedAt, new Date()) : undefined,
+    search
+      ? or(
+          ilike(articles.title, `%${search}%`),
+          ilike(articles.lead, `%${search}%`),
+          sql`array_to_string(${articles.tags}, ' ') ILIKE ${`%${search}%`}`,
+        )
+      : undefined,
+  )
   return db
     .select()
     .from(articles)
     .where(where)
     .orderBy(desc(sql`coalesce(${articles.publishedAt}, ${articles.updatedAt})`))
+}
+
+/** Public feed: cache publish/update actionlari orqali darhol yangilanadi. */
+export async function listPublishedArticles(query = '') {
+  return unstable_cache(
+    () => listArticles('published', query),
+    ['published-articles', query],
+    { tags: ['articles'], revalidate: 3600 },
+  )()
 }
 
 export async function getArticle(id: string): Promise<Article | undefined> {
@@ -37,20 +58,36 @@ export async function getArticle(id: string): Promise<Article | undefined> {
 }
 
 export async function getPublishedArticleBySlug(slug: string): Promise<Article | undefined> {
-  const rows = await getDb()
-    .select()
-    .from(articles)
-    .where(and(eq(articles.slug, slug), eq(articles.status, 'published')))
-    .limit(1)
-  return rows[0]
+  return unstable_cache(
+    async () => {
+      const rows = await getDb()
+        .select()
+        .from(articles)
+        .where(and(eq(articles.slug, slug), eq(articles.status, 'published'), lte(articles.publishedAt, new Date())))
+        .limit(1)
+      return rows[0]
+    },
+    ['published-article', slug],
+    { tags: ['articles', `article:${slug}`], revalidate: 3600 },
+  )()
 }
 
 /** Sarlavhadan band bo'lmagan slug yasaydi (o'zining slugini hisobga olmaydi). */
 export async function buildSlug(title: string, exceptId?: string): Promise<string> {
   const db = getDb()
-  const rows = await db.select({ id: articles.id, slug: articles.slug }).from(articles)
-  const taken = new Set(rows.filter((r) => r.id !== exceptId).map((r) => r.slug))
-  return uniqueSlug(slugFromTitle(title), taken)
+  const base = slugFromTitle(title)
+  let candidate = base
+  let suffix = 2
+
+  while (true) {
+    const rows = await db
+      .select({ id: articles.id })
+      .from(articles)
+      .where(eq(articles.slug, candidate))
+      .limit(1)
+    if (!rows[0] || rows[0].id === exceptId) return candidate
+    candidate = `${base}-${suffix++}`
+  }
 }
 
 export async function createDraft(): Promise<Article> {
@@ -65,35 +102,51 @@ export async function createDraft(): Promise<Article> {
 
 export type ArticleDraft = {
   title: string
+  contentType: Article['contentType']
   lead: string
   contentJson: JSONContent
   coverUrl: string | null
+  mediaUrl: string | null
+  mediaProvider: string | null
+  seriesId: string | null
+  seriesOrder: number | null
+  isFeatured: boolean
+  scheduledAt: Date | null
   tags: string[]
 }
 
-export async function saveDraft(id: string, draft: ArticleDraft): Promise<Article> {
+export type ArticlePatch = Partial<ArticleDraft>
+
+export async function saveDraft(id: string, patch: ArticlePatch): Promise<Article> {
   const db = getDb()
   const current = await getArticle(id)
   if (!current) throw new Error('Maqola topilmadi')
 
-  // Slug faqat qoralama holatida yangilanadi — chop etilgan havola buzilmasin
-  const slug =
-    current.status === 'draft' && draft.title.trim()
-      ? await buildSlug(draft.title, id)
-      : current.slug
+  const values: Record<string, unknown> = { updatedAt: new Date() }
+  if (patch.title !== undefined) {
+    values.title = patch.title
+    if (current.status === 'draft' && patch.title.trim() && patch.title !== current.title) {
+      values.slug = await buildSlug(patch.title, id)
+    }
+  }
+  if (patch.contentType !== undefined) values.contentType = patch.contentType
+  if (patch.lead !== undefined) values.lead = patch.lead
+  if (patch.contentJson !== undefined) {
+    values.contentJson = patch.contentJson
+    values.contentHtml = renderContentHtml(patch.contentJson)
+  }
+  if (patch.coverUrl !== undefined) values.coverUrl = patch.coverUrl
+  if (patch.mediaUrl !== undefined) values.mediaUrl = patch.mediaUrl
+  if (patch.mediaProvider !== undefined) values.mediaProvider = patch.mediaProvider
+  if (patch.seriesId !== undefined) values.seriesId = patch.seriesId
+  if (patch.seriesOrder !== undefined) values.seriesOrder = patch.seriesOrder
+  if (patch.isFeatured !== undefined) values.isFeatured = patch.isFeatured ? 1 : 0
+  if (patch.scheduledAt !== undefined) values.scheduledAt = patch.scheduledAt
+  if (patch.tags !== undefined) values.tags = patch.tags
 
   const updated = await db
     .update(articles)
-    .set({
-      slug,
-      title: draft.title,
-      lead: draft.lead,
-      contentJson: draft.contentJson,
-      contentHtml: renderContentHtml(draft.contentJson),
-      coverUrl: draft.coverUrl,
-      tags: draft.tags,
-      updatedAt: new Date(),
-    })
+    .set(values)
     .where(eq(articles.id, id))
     .returning()
 

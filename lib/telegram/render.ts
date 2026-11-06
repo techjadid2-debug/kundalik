@@ -12,7 +12,7 @@ const SAFETY = 8
  */
 const SENTINEL = String.fromCharCode(1)
 
-export const DEFAULT_ARTICLE_TEMPLATE = `📌 <b>{title}</b>
+const LEGACY_DEFAULT_ARTICLE_TEMPLATE = `📌 <b>{title}</b>
 
 {lead}
 
@@ -20,6 +20,20 @@ export const DEFAULT_ARTICLE_TEMPLATE = `📌 <b>{title}</b>
 
 <a href="{url}">To'liq o'qish →</a>
 {channel}`
+
+export const DEFAULT_ARTICLE_TEMPLATE = `📝 <b>{title}</b>
+
+{summary}
+
+📅 {date}
+{tags}
+
+<a href="{url}">📖 To'liq o'qish</a>
+{channelLink}`
+
+export function isLegacyArticleTemplate(template: string): boolean {
+  return template.trim() === LEGACY_DEFAULT_ARTICLE_TEMPLATE.trim()
+}
 
 export const DEFAULT_QUOTE_TEMPLATE = `❝ {quote} ❞
 
@@ -153,6 +167,7 @@ function renderWithBudget(args: {
 export type ArticleVars = {
   title: string
   lead: string
+  summary?: string
   tags: string[]
   url: string
   date: Date
@@ -160,22 +175,44 @@ export type ArticleVars = {
   timeZone?: string
 }
 
+export type InlineKeyboard = { inline_keyboard: Array<Array<{ text: string; url: string }>> }
+
+export function publicChannelUrl(channel: string): string | null {
+  const match = /^@([a-zA-Z0-9_]{5,})$/.exec(channel.trim())
+  return match ? `https://t.me/${match[1]}` : null
+}
+
+export function buildArticleKeyboard(vars: Pick<ArticleVars, 'url' | 'channel'>): InlineKeyboard {
+  const buttons = [{ text: '📖 To‘liq o‘qish', url: vars.url }]
+  const channelUrl = publicChannelUrl(vars.channel)
+  if (channelUrl) buttons.push({ text: '📣 Kanalga o‘tish', url: channelUrl })
+  return { inline_keyboard: [buttons] }
+}
+
 export function renderArticleCaption(
   template: string,
   vars: ArticleVars,
   limit: number = CAPTION_LIMIT,
 ): RenderResult {
+  const chosenTemplate = template || DEFAULT_ARTICLE_TEMPLATE
+  const usesSummary = chosenTemplate.includes('{summary}')
+  const summary = vars.summary?.trim() || vars.lead
+  const channelUrl = publicChannelUrl(vars.channel)
   return renderWithBudget({
-    template: template || DEFAULT_ARTICLE_TEMPLATE,
+    template: chosenTemplate,
     limit,
-    flexKey: 'lead',
-    flexRaw: vars.lead,
+    flexKey: usesSummary ? 'summary' : 'lead',
+    flexRaw: usesSummary ? summary : vars.lead,
     values: {
       title: escapeHtml(vars.title),
+      lead: escapeHtml(vars.lead),
+      summary: escapeHtml(summary),
       tags: escapeHtml(formatTags(vars.tags)),
       url: escapeAttribute(vars.url),
       date: escapeHtml(formatDate(vars.date, vars.timeZone)),
       channel: escapeHtml(vars.channel),
+      channelUrl: channelUrl ? escapeAttribute(channelUrl) : '',
+      channelLink: channelUrl ? `<a href="${escapeAttribute(channelUrl)}">📣 Kanalga o'tish</a>` : '',
     },
   })
 }

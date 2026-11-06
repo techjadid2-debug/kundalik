@@ -8,11 +8,12 @@ import {
   CAPTION_LIMIT,
   DEFAULT_ARTICLE_TEMPLATE,
   DEFAULT_QUOTE_TEMPLATE,
+  buildArticleKeyboard,
   renderArticleCaption,
   renderQuoteMessage,
   visibleLength,
 } from '../lib/telegram/render'
-import { extractQuotes, suggestLead } from '../lib/quotes'
+import { buildTelegramSummary, extractQuotes, suggestLead } from '../lib/quotes'
 
 let passed = 0
 function check(name: string, fn: () => void) {
@@ -118,6 +119,18 @@ check('iqtibos xabari renderlanadi', () => {
   assert.equal(r.truncated, false)
 })
 
+check('inline keyboard maqola va kanal havolasini beradi', () => {
+  const keyboard = buildArticleKeyboard(base)
+  assert.equal(keyboard.inline_keyboard[0].length, 2)
+  assert.equal(keyboard.inline_keyboard[0][0].url, base.url)
+  assert.equal(keyboard.inline_keyboard[0][1].url, 'https://t.me/kundalik_kanal')
+})
+
+check('raqamli kanal id uchun public tugma chiqmaydi', () => {
+  const keyboard = buildArticleKeyboard({ ...base, channel: '-1001234567890' })
+  assert.equal(keyboard.inline_keyboard[0].length, 1)
+})
+
 console.log('\nIqtibos ajratish')
 
 const doc: JSONContent = {
@@ -165,6 +178,13 @@ check('belgilanmagan hujjat bo\'sh ro\'yxat beradi', () => {
 
 check('lid birinchi paragrafdan taklif qilinadi', () => {
   assert.equal(suggestLead(doc), 'Oddiy matn. Birinchi iqtibos yana oddiy.')
+})
+
+check('Telegram xulosasi lid va maqola punktlarini yig\'adi', () => {
+  const summary = buildTelegramSummary(doc, 'Kirish matni.')
+  assert.ok(summary.startsWith('Kirish matni.'))
+  assert.ok(summary.includes('• Oddiy matn. Birinchi iqtibos yana oddiy.'))
+  assert.ok(summary.includes('• Ikkinchi iqtibos'))
 })
 
 console.log(`\n${passed} ta tekshiruv o'tdi\n`)

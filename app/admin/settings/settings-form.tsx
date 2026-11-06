@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { saveSettingsAction, sendTestMessageAction } from '@/lib/actions'
-import { Button, Field, Input, Notice, Textarea } from '@/components/ui'
+import { Field, Input, Notice, Textarea } from '@/components/ui'
+import { ActionButton } from '@/components/action-button'
 import type { ActionResult } from '@/lib/actions'
 
 type Values = {
@@ -16,11 +17,14 @@ type Values = {
 const PLACEHOLDERS = [
   ['{title}', 'sarlavha'],
   ['{lead}', 'lid matni (avtomatik qisqaradi)'],
+  ['{summary}', 'maqoladan avtomatik batafsil mazmun'],
   ['{quote}', 'iqtibos matni'],
   ['{tags}', '#teglar'],
   ['{url}', 'maqola havolasi'],
   ['{date}', 'sana'],
   ['{channel}', 'kanal nomi'],
+  ['{channelUrl}', 'kanalning public havolasi'],
+  ['{channelLink}', 'kanalga tayyor HTML havola'],
 ]
 
 export function SettingsForm({ initial }: { initial: Values }) {
@@ -45,12 +49,12 @@ export function SettingsForm({ initial }: { initial: Values }) {
           />
         </Field>
         <div>
-          <Button type="button" disabled={testing} onClick={() => startTest(async () => {
+          <ActionButton type="button" pending={testing} succeeded={testResult?.ok} pendingLabel="Jo'natilmoqda…" successLabel="Yuborildi" onClick={() => startTest(async () => {
             setTestResult(null)
             setTestResult(await sendTestMessageAction())
           })}>
-            {testing ? "Jo'natilmoqda…" : 'Test xabari yuborish'}
-          </Button>
+            Test xabari yuborish
+          </ActionButton>
           {testResult ? (
             <div className="mt-2">
               <Notice tone={testResult.ok ? 'info' : 'error'}>
@@ -117,9 +121,12 @@ export function SettingsForm({ initial }: { initial: Values }) {
       </section>
 
       <div className="flex items-center gap-3 border-t border-line pt-6">
-        <Button
+        <ActionButton
           variant="solid"
-          disabled={saving}
+          pending={saving}
+          succeeded={result?.ok}
+          pendingLabel="Saqlanmoqda…"
+          successLabel="Saqlandi"
           onClick={() =>
             startSave(async () => {
               setResult(null)
@@ -127,8 +134,8 @@ export function SettingsForm({ initial }: { initial: Values }) {
             })
           }
         >
-          {saving ? 'Saqlanmoqda…' : 'Saqlash'}
-        </Button>
+          Saqlash
+        </ActionButton>
         {result ? (
           <Notice tone={result.ok ? 'info' : 'error'}>
             {result.ok ? (result.message ?? 'Saqlandi') : result.error}
